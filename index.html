@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Task-to-Invoice Portal</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #F5F3FF;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .card {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 8px 32px rgba(124,58,237,0.12);
+      padding: 36px 32px;
+      width: 100%;
+      max-width: 480px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 28px;
+    }
+
+    .header h1 {
+      font-size: 22px;
+      color: #1E1B4B;
+      font-weight: 700;
+    }
+
+    .header p {
+      font-size: 13px;
+      color: #6B7280;
+      margin-top: 4px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #EDE9FE;
+      color: #7C3AED;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: #374151;
+      margin-bottom: 5px;
+      margin-top: 14px;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 10px 13px;
+      border: 1.5px solid #E5E7EB;
+      border-radius: 8px;
+      font-size: 14px;
+      color: #1F2937;
+      outline: none;
+      transition: border 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: #7C3AED;
+    }
+
+    .row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .row > div { flex: 1; }
+
+    .divider {
+      border: none;
+      border-top: 1.5px solid #F3F4F6;
+      margin: 20px 0 6px;
+    }
+
+    .gst-info {
+      background: #F0FDF4;
+      border: 1px solid #BBF7D0;
+      border-radius: 8px;
+      padding: 10px 13px;
+      font-size: 12px;
+      color: #065F46;
+      margin-top: 14px;
+    }
+
+    button {
+      width: 100%;
+      padding: 13px;
+      background: #7C3AED;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 22px;
+      transition: background 0.2s, transform 0.1s;
+    }
+
+    button:hover:not(:disabled) {
+      background: #6D28D9;
+      transform: translateY(-1px);
+    }
+
+    button:disabled {
+      background: #A78BFA;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    #status {
+      margin-top: 14px;
+      padding: 12px 14px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+      line-height: 1.5;
+    }
+
+    .success {
+      background: #D1FAE5;
+      color: #065F46;
+      border: 1px solid #6EE7B7;
+    }
+
+    .error {
+      background: #FEE2E2;
+      color: #991B1B;
+      border: 1px solid #FCA5A5;
+    }
+
+    .loading {
+      background: #EDE9FE;
+      color: #5B21B6;
+      border: 1px solid #C4B5FD;
+    }
+
+    #status a {
+      color: #7C3AED;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="header">
+      <div class="badge"> Invoice Generator</div>
+      <h1>Task-to-Invoice Portal</h1>
+      <p>Fill in task details to generate a client-ready PDF invoice</p>
+    </div>
+
+    <label>Task Name</label>
+    <input type="text" id="taskName" placeholder="e.g. Website Redesign" />
+
+    <div class="row">
+      <div>
+        <label>Client Name</label>
+        <input type="text" id="clientName" placeholder="e.g. Acme Corp" />
+      </div>
+      <div>
+        <label>Client Email</label>
+        <input type="email" id="clientEmail" placeholder="client@email.com" />
+      </div>
+    </div>
+
+    <div class="row">
+      <div>
+        <label>Hours Worked</label>
+        <input type="number" id="hours" placeholder="e.g. 5" min="0" />
+      </div>
+      <div>
+        <label>Hourly Rate</label>
+        <input type="number" id="rate" placeholder="e.g. 50" min="0" />
+      </div>
+    </div>
+
+    <label>Currency</label>
+    <select id="currency">
+      <option value="USD">🇺🇸 USD — US Dollar</option>
+      <option value="EUR">🇪🇺 EUR — Euro</option>
+      <option value="GBP">🇬🇧 GBP — British Pound</option>
+      <option value="INR" selected>🇮🇳 INR — Indian Rupee</option>
+    </select>
+
+    <div class="gst-info">
+       <b>GST (18%)</b> will be automatically calculated and added to the invoice total.
+    </div>
+
+    <button id="submitBtn" onclick="submitForm()">
+       Generate Invoice
+    </button>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    function submitForm() {
+      const taskName   = document.getElementById('taskName').value.trim();
+      const clientName = document.getElementById('clientName').value.trim();
+      const clientEmail= document.getElementById('clientEmail').value.trim();
+      const hours      = parseFloat(document.getElementById('hours').value);
+      const rate       = parseFloat(document.getElementById('rate').value);
+      const currency   = document.getElementById('currency').value;
+
+      // Validation
+      if (!taskName || !clientName || !clientEmail || !hours || !rate) {
+        showStatus(' Please fill in all fields.', 'error');
+        return;
+      }
+      if (!clientEmail.includes('@')) {
+        showStatus(' Please enter a valid email address.', 'error');
+        return;
+      }
+
+      // Disable button
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerText = '⏳ Generating Invoice...';
+      showStatus('Processing your invoice — fetching live currency rate and generating PDF...', 'loading');
+
+      google.script.run
+        .withSuccessHandler(onSuccess)
+        .withFailureHandler(onError)
+        .saveTaskAndGenerateInvoice({
+          taskName, clientName, clientEmail, hours, rate, currency
+        });
+    }
+
+    function onSuccess(result) {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = false;
+      btn.innerText = '⚡ Generate Invoice';
+
+      if (result.success) {
+        showStatus(
+          ' Invoice generated successfully!<br>' +
+          ' Email sent to client.<br><br>' +
+          '<a href="' + result.link + '" target="_blank">📄 View / Download PDF</a>',
+          'success'
+        );
+      } else {
+        showStatus(' Error: ' + result.error, 'error');
+      }
+    }
+
+    function onError(err) {
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = false;
+      btn.innerText = '⚡ Generate Invoice';
+      showStatus(' Script error: ' + err.message, 'error');
+    }
+
+    function showStatus(msg, type) {
+      const el = document.getElementById('status');
+      el.innerHTML = msg;
+      el.className = type;
+      el.style.display = 'block';
+    }
+  </script>
+</body>
+</html>
